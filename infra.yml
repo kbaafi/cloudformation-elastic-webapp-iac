@@ -1,0 +1,331 @@
+# Parameters
+Parameters: 
+  EnvironmentName: 
+    Description: An environment name that will be prefixed to the resources
+    Type: String 
+  
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this network 
+    Type: String 
+    Default: 10.0.0.0/16
+
+  PrivateNet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for this network
+    Type: String
+    Default: 10.0.1.0/24
+
+  PrivateNet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for this network
+    Type: String
+    Default: 10.0.2.0/24
+
+  PublicNet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for this network
+    Type: String
+    Default: 10.0.8.0/24
+
+  PublicNet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for this network
+    Type: String
+    Default: 10.0.9.0/24
+
+# Resources
+Resources:
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock:
+        Ref: VpcCIDR
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value:
+            Ref: ${EnvironmentName}
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+        - Key: Name
+          Value:
+            Ref: ${EnvironmentName}
+
+  VPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      InternetGatewayId:
+        Ref: InternetGateway
+      VpcId:
+        Ref: VPC
+
+  PrivateNet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [0, Fn::GetAzs '']
+      CidrBlock:
+        Ref: VpcCIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Tag
+      VpcId:
+        Ref: VPC
+
+  PrivateNet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [1, Fn::GetAzs '']
+      CidrBlock:
+        Ref: VpcCIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Tag
+      VpcId:
+        Ref: VPC
+
+  PublicNet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [0, Fn::GetAzs '']
+      CidrBlock:
+        Ref: VpcCIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value:
+            Ref: ${EnvironmentName}
+      VpcId: !Ref VPC
+
+  PublicNet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [1, Fn::GetAzs '']
+      CidrBlock:
+        Ref: VpcCIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value:
+            Ref: ${EnvironmentName}
+      VpcId: !Ref VPC
+
+  AZ1EIP:
+    Type: "AWS::EC2::EIP"
+    DependsOn: InternetGateway
+    Properties:
+      Domain: vpc
+  
+
+  AZ1NatGateway:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt AZ1EIP.AllocationId
+      SubnetId: !Ref PublicNet1
+      Tags:
+        - Key: Name
+          Value:
+            Ref: ${EnvironmentName}
+
+  AZ2EIP:
+    Type: "AWS::EC2::EIP"
+    DependsOn: InternetGateway
+    Properties:
+      Domain: vpc
+  
+  AZ2NatGateway:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt AZ2EIP.AllocationId
+      SubnetId: !Ref PublicNet2
+      Tags:
+        - Key: Name
+          Value:
+            Ref: ${EnvironmentName}
+
+  PublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref ${EnvironmentName}
+      VpcId: !Ref VPC
+
+  DefaultPublicRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicNet1RTA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicNet1
+
+  PublicNet2RTA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicNet2RTA
+
+  PrivateNet1RouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref ${EnvironmentName}
+      VpcId: !Ref VPC
+
+  PrivateNet1DefaultRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref AZ1NatGateway
+      RouteTableId: !Ref PrivateNet1RouteTable
+
+  PrivateNet1RTA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref PrivateNet1RouteTable
+      SubnetId: !Ref PrivateNet1
+
+  PrivateNet2RouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref ${EnvironmentName}
+      VpcId: !Ref VPC
+
+  PrivateNet2DefaultRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref AZ2NatGateway
+      RouteTableId: !Ref PrivateNet2RouteTable
+
+  PrivateNet2RTA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref PrivateNet2RouteTable
+      SubnetId: !Ref PrivateNet2
+
+  LoadBalancerSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Allow only http[8080] to load balancer
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref VPC
+
+  WebAppSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Allow only http and SSH to the hosts
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref VPC
+
+  LoadBalancingTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocal: HTTP
+      HealthCheckTimeoutSeconds: 8
+      HealthCheckThresholdCount: 2
+      Port: 8080
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: !Ref VPC
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - Ref: PublicNet1
+        - Ref: PublicNet2
+      SecurityGroups:
+        - Ref: LoadBalancerSecurityGroup
+
+  LoadBalancingListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref LoadBalancingTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  LoadBalancingListenerRule:
+    Type: "AWS::ElasticLoadBalancingV2::ListenerRule"
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref LoadBalancingTargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values: [/]
+      ListenerArn: !Ref LoadBalancingListener
+      Priority: 1
+
+  WebAppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties: 
+      UserData:
+        Fn::Base64:: !Sub |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install unzip awscli -y
+          apt-get install apache2 -y
+          systemctl start apache2.service
+          cd  /var/www/html
+          aws s3 cp s3://udacity-demo1/udacity.zip
+          unzip -o udacity.zip
+      ImageId: ami-005bdb005fb00e791
+      #IamInstanceProfile: !Ref ProfileWithRolesForOurApp
+      #KeyName: that-one
+      SecurityGroups:
+        - Ref: WebServerSecurityGroup
+      InstanceType: t3.small
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdk"
+          Ebs:
+            VolumeSize: '10'
+
+  WebAppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - Ref: PrivateNet1
+        - Ref: PrivateNet1
+      LaunchConfigurationName: !Ref WebAppLaunchConfig
+      MinSize: '1'
+      MaxSize: '5'
+      TargetGroupARNs:
+        - Ref: LoadBalancingTargetGroup
