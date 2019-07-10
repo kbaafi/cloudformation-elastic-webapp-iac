@@ -1,4 +1,4 @@
-[arch]:images/arch.png
+[arch]:images/arch.PNG
 # CloudFormation Infrastructure as Code for a Web App
 
 This project showcases how to build an network and server infrastructure to support a web application. The template comprises:
