@@ -305,8 +305,7 @@ Resources:
           apt-get install apache2 -y
           systemctl start apache2.service
           cd  /var/www/html
-          aws s3 cp s3://udacity-demo1/udacity.zip
-          unzip -o udacity.zip
+          aws s3 cp s3://kb-uda-website/index.htm
       ImageId: ami-005bdb005fb00e791
       #IamInstanceProfile: !Ref ProfileWithRolesForOurApp
       #KeyName: that-one
@@ -323,7 +322,7 @@ Resources:
     Properties:
       VPCZoneIdentifier:
         - Ref: PrivateNet1
-        - Ref: PrivateNet1
+        - Ref: PrivateNet2
       LaunchConfigurationName: !Ref WebAppLaunchConfig
       MinSize: '1'
       MaxSize: '5'
