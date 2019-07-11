@@ -6,28 +6,23 @@ Parameters:
   
   VpcCIDR:
     Description: Please enter the IP range (CIDR notation) for this network 
-    Type: String 
-    Default: 10.0.0.0/16
+    Type: String
 
   PrivateNet1CIDR:
     Description: Please enter the IP range (CIDR notation) for this network
     Type: String
-    Default: 10.0.1.0/24
 
   PrivateNet2CIDR:
     Description: Please enter the IP range (CIDR notation) for this network
     Type: String
-    Default: 10.0.2.0/24
 
   PublicNet1CIDR:
     Description: Please enter the IP range (CIDR notation) for this network
     Type: String
-    Default: 10.0.8.0/24
 
   PublicNet2CIDR:
     Description: Please enter the IP range (CIDR notation) for this network
     Type: String
-    Default: 10.0.9.0/24
 
   S3AccessArn:
     Description: Allow EC2 Instances to access S3
@@ -44,7 +39,7 @@ Resources:
       Tags:
         - Key: Name
           Value:
-            Ref: ${EnvironmentName}
+            Ref: EnvironmentName
 
   InternetGateway:
     Type: "AWS::EC2::InternetGateway"
@@ -52,7 +47,7 @@ Resources:
       Tags:
         - Key: Name
           Value:
-            Ref: ${EnvironmentName}
+            Ref: EnvironmentName
 
   VPCGatewayAttachment:
     Type: "AWS::EC2::VPCGatewayAttachment"
@@ -65,51 +60,63 @@ Resources:
   PrivateNet1:
     Type: "AWS::EC2::Subnet"
     Properties:
-      AvailabilityZone: !Select [0, Fn::GetAzs '']
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock:
-        Ref: VpcCIDR
+        Ref: PrivateNet1CIDR
       MapPublicIpOnLaunch: false
       Tags:
-        - Tag
+        - Key: Name
+          Value:
+            Ref: EnvironmentName
       VpcId:
         Ref: VPC
 
   PrivateNet2:
     Type: "AWS::EC2::Subnet"
     Properties:
-      AvailabilityZone: !Select [1, Fn::GetAzs '']
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock:
-        Ref: VpcCIDR
+        Ref: PrivateNet2CIDR
       MapPublicIpOnLaunch: false
       Tags:
-        - Tag
+        - Key: Name
+          Value:
+            Ref: EnvironmentName
       VpcId:
         Ref: VPC
 
   PublicNet1:
     Type: "AWS::EC2::Subnet"
     Properties:
-      AvailabilityZone: !Select [0, Fn::GetAzs '']
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock:
-        Ref: VpcCIDR
+        Ref: PublicNet1CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
           Value:
-            Ref: ${EnvironmentName}
+            Ref: EnvironmentName
       VpcId: !Ref VPC
 
   PublicNet2:
     Type: "AWS::EC2::Subnet"
     Properties:
-      AvailabilityZone: !Select [1, Fn::GetAzs '']
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock:
-        Ref: VpcCIDR
+        Ref: PublicNet2CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
           Value:
-            Ref: ${EnvironmentName}
+            Ref: EnvironmentName
       VpcId: !Ref VPC
 
   AZ1EIP:
@@ -126,7 +133,7 @@ Resources:
       Tags:
         - Key: Name
           Value:
-            Ref: ${EnvironmentName}
+            Ref: EnvironmentName
 
   AZ2EIP:
     Type: "AWS::EC2::EIP"
@@ -142,14 +149,14 @@ Resources:
       Tags:
         - Key: Name
           Value:
-            Ref: ${EnvironmentName}
+            Ref: EnvironmentName
 
   PublicRouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
       Tags:
         - Key: Name
-          Value: !Ref ${EnvironmentName}
+          Value: !Ref EnvironmentName
       VpcId: !Ref VPC
 
   DefaultPublicRoute:
@@ -169,14 +176,14 @@ Resources:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
       RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicNet2RTA
+      SubnetId: !Ref PublicNet2
 
   PrivateNet1RouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
       Tags:
         - Key: Name
-          Value: !Ref ${EnvironmentName}
+          Value: !Ref EnvironmentName
       VpcId: !Ref VPC
 
   PrivateNet1DefaultRoute:
@@ -197,7 +204,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Ref ${EnvironmentName}
+          Value: !Ref EnvironmentName
       VpcId: !Ref VPC
 
   PrivateNet2DefaultRoute:
@@ -268,9 +275,9 @@ Resources:
     Properties:
       HealthCheckIntervalSeconds: 10
       HealthCheckPath: /
-      HealthCheckProtocal: HTTP
+      HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 8
-      HealthCheckThresholdCount: 2
+      HealthyThresholdCount: 2
       Port: 8080
       Protocol: HTTP
       UnhealthyThresholdCount: 5
@@ -311,7 +318,7 @@ Resources:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties: 
       UserData:
-        Fn::Base64:: !Sub |
+        Fn::Base64: !Sub |
           #!/bin/bash
           apt-get update -y
           apt-get install unzip awscli -y
@@ -320,10 +327,10 @@ Resources:
           cd  /var/www/html
           aws s3 cp s3://kb-uda-website/index.htm
       ImageId: ami-005bdb005fb00e791
-      IamInstanceProfile: !Ref S3AccessArn
+      #IamInstanceProfile: !Ref S3AccessArn
       #KeyName: 
       SecurityGroups:
-        - Ref: WebServerSecurityGroup
+        - Ref: WebAppSecurityGroup
       InstanceType: t3.small
       BlockDeviceMappings:
         - DeviceName: "/dev/sdk"

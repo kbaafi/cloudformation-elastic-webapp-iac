@@ -21,8 +21,8 @@
     },
     {
         "ParameterKey": "PublicNet2CIDR",
-        "ParameterValue": "10.0.3.0/16"
-    }
+        "ParameterValue": "10.0.3.0/24"
+    },
     {
         "ParameterKey": "S3AccessArn",
         "ParameterValue": "arn:aws:iam::558147388617:role/redshift_s3_readonly"
