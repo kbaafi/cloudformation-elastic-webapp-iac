@@ -29,6 +29,10 @@ Parameters:
     Type: String
     Default: 10.0.9.0/24
 
+  S3AccessArn:
+    Description: Allow EC2 Instances to access S3
+    Type: String
+
 # Resources
 Resources:
   VPC:
@@ -114,7 +118,6 @@ Resources:
     Properties:
       Domain: vpc
   
-
   AZ1NatGateway:
     Type: "AWS::EC2::NatGateway"
     Properties:
@@ -317,8 +320,8 @@ Resources:
           cd  /var/www/html
           aws s3 cp s3://kb-uda-website/index.htm
       ImageId: ami-005bdb005fb00e791
-      #IamInstanceProfile: !Ref ProfileWithRolesForOurApp
-      #KeyName: that-one
+      IamInstanceProfile: !Ref S3AccessArn
+      #KeyName: 
       SecurityGroups:
         - Ref: WebServerSecurityGroup
       InstanceType: t3.small
