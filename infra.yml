@@ -325,7 +325,7 @@ Resources:
           apt-get install apache2 -y
           systemctl start apache2.service
           cd  /var/www/html
-          aws s3 cp s3://kb-uda-website/index.htm
+          aws s3 cp s3://kb-uda-website/index.htm index.htm
       ImageId: ami-005bdb005fb00e791
       #IamInstanceProfile: !Ref S3AccessArn
       #KeyName: 
