@@ -306,22 +306,19 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - 
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service:
-                - "s3.amazonaws.com"
+                - "ec2.amazonaws.com"
             Action:
               - "sts:AssumeRole"
       Policies:
-        - 
-          PolicyName: "RootPolicy"
+        - PolicyName: "RootPolicy"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - 
-                Effect: "Allow"
-                Action: "*"
+              - Effect: "Allow"
+                Action: "s3:*"
                 Resource: "*"
 
   S3AcessInstanceProfile:
@@ -331,7 +328,6 @@ Resources:
         - 
           Ref: S3AccessRole
   
-
   WebAppLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties: 
@@ -343,7 +339,7 @@ Resources:
           apt-get install apache2 -y
           systemctl start apache2.service
           cd  /var/www/html
-          aws s3 cp s3://kb-uda-website/index.htm index.htm
+          aws s3 cp --region us-west-2 s3://kb-uda-website/index.htm index.htm
       ImageId: ami-005bdb005fb00e791
       IamInstanceProfile: !Ref S3AcessInstanceProfile
       SecurityGroups:
