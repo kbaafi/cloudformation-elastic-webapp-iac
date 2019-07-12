@@ -223,7 +223,7 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupDescription: Allow only http[8080] to load balancer
+      GroupDescription: Allow only http to load balancer
       SecurityGroupEgress:
         - IpProtocol: tcp
           FromPort: 80
@@ -304,6 +304,35 @@ Resources:
       ListenerArn: !Ref LoadBalancingListener
       Priority: 1
 
+  S3AccessRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              Service:
+                - "s3.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+      Policies:
+        - PolicyName: "RootPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Allow: "*"
+                Resource: "*"
+
+  S3AcessInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Roles:
+        - !Ref S3AccessRole
+  
+
   WebAppLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties: 
@@ -317,8 +346,7 @@ Resources:
           cd  /var/www/html
           aws s3 cp s3://kb-uda-website/index.htm index.htm
       ImageId: ami-005bdb005fb00e791
-      #IamInstanceProfile: !Ref S3AccessArn
-      #KeyName: 
+      IamInstanceProfile: !Ref S3AcessInstanceProfile
       SecurityGroups:
         - Ref: WebAppSecurityGroup
       InstanceType: t3.small
