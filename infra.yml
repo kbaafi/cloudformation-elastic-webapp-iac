@@ -330,7 +330,7 @@ Resources:
     Type: "AWS::IAM::InstanceProfile"
     Properties:
       Roles:
-        - !Ref S3AccessRole
+        - Ref: S3AccessRole
   
 
   WebAppLaunchConfig:
