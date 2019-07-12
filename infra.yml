@@ -24,10 +24,6 @@ Parameters:
     Description: Please enter the IP range (CIDR notation) for this network
     Type: String
 
-  S3AccessArn:
-    Description: Allow EC2 Instances to access S3
-    Type: String
-
 # Resources
 Resources:
   VPC:
@@ -315,22 +311,25 @@ Resources:
             Principal:
               Service:
                 - "s3.amazonaws.com"
-              Action:
-                - "sts:AssumeRole"
+            Action:
+              - "sts:AssumeRole"
       Policies:
-        - PolicyName: "RootPolicy"
+        - 
+          PolicyName: "RootPolicy"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: "Allow"
-                Allow: "*"
+              - 
+                Effect: "Allow"
+                Action: "*"
                 Resource: "*"
 
   S3AcessInstanceProfile:
     Type: "AWS::IAM::InstanceProfile"
     Properties:
       Roles:
-        - Ref: S3AccessRole
+        - 
+          Ref: S3AccessRole
   
 
   WebAppLaunchConfig:
